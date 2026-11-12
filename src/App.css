@@ -4,12 +4,10 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f4;
 }
-
 .container {
   width: 500px;
   margin: 80px auto;
@@ -17,18 +15,15 @@ body {
   background-color: white;
   border-radius: 10px;
 }
-
 h1 {
   text-align: center;
   margin-bottom: 25px;
 }
-
 .input-section {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
 }
-
 input {
   flex: 1;
   padding: 12px;
@@ -36,19 +31,16 @@ input {
   border-radius: 5px;
   outline: none;
 }
-
 button {
   padding: 10px 15px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
-
 .add-btn {
   background-color: green;
   color: white;
 }
-
 .todo-item {
   display: flex;
   justify-content: space-between;
@@ -58,13 +50,11 @@ button {
   background-color: #f1f1f1;
   border-radius: 5px;
 }
-
 .edit-btn {
   background-color: orange;
   color: white;
   margin-right: 5px;
 }
-
 .delete-btn {
   background-color: red;
   color: white;
