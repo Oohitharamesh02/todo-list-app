@@ -4,14 +4,34 @@ import { useState } from "react";
 function Todo() {
   const [task, setTask] = useState("");
   const [todos, setTodos] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null);
 
   const handleAdd = () => {
     if (task.trim() === "") {
       return;
     }
 
-    setTodos([...todos, task]);
+    if (editingIndex !== null) {
+      const updatedTodos = [...todos];
+      updatedTodos[editingIndex] = task;
+
+      setTodos(updatedTodos);
+      setEditingIndex(null);
+    } else {
+      setTodos([...todos, task]);
+    }
+
     setTask("");
+  };
+
+  const handleEdit = (index) => {
+    setTask(todos[index]);
+    setEditingIndex(index);
+  };
+
+  const handleCancel = () => {
+    setTask("");
+    setEditingIndex(null);
   };
 
   return (
@@ -35,8 +55,17 @@ function Todo() {
             onClick={handleAdd}
             className="bg-green-600 hover:bg-green-700 text-white text-base font-semibold px-5 py-3 rounded-lg"
           >
-            Add
+            {editingIndex !== null ? "Update" : "Add"}
           </button>
+
+          {editingIndex !== null && (
+            <button
+              onClick={handleCancel}
+              className="bg-gray-500 hover:bg-gray-600 text-white text-base px-4 py-3 rounded-lg"
+            >
+              Cancel
+            </button>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -50,11 +79,16 @@ function Todo() {
               </span>
 
               <div className="flex gap-2 shrink-0 ml-3">
-                <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded-md">
+                <button
+                  onClick={() => handleEdit(index)}
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded-md"
+                >
                   Edit
                 </button>
 
-                <button className="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-md">
+                <button
+                  className="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-md"
+                >
                   Delete
                 </button>
               </div>
