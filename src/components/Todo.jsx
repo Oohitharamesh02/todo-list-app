@@ -5,6 +5,7 @@ function Todo() {
   const [task, setTask] = useState("");
   const [todos, setTodos] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
+  const [activeTab, setActiveTab] = useState("All");
 
   const handleAdd = () => {
     if (task.trim() === "") {
@@ -13,8 +14,11 @@ function Todo() {
 
     if (editIndex !== null) {
       const newTodos = [...todos];
-      newTodos[editIndex].text = task;
-      setTodos(newTodos);      
+      newTodos[editIndex] = {
+        ...newTodos[editIndex],
+        text: task,
+      };
+      setTodos(newTodos);
       setEditIndex(null);
     } else {
       setTodos([...todos, { text: task, completed: false }]);
@@ -26,6 +30,7 @@ function Todo() {
   const handleEdit = (index) => {
     setTask(todos[index].text);
     setEditIndex(index);
+    setActiveTab("All");
   };
 
   const handleCancel = () => {
@@ -44,33 +49,32 @@ function Todo() {
     setTodos(newTodos);
   };
 
-  const handleAll = (checked) => {
-    const newTodos = todos.map((todo) => ({
-      ...todo,
-      completed: checked,
-    }));
-
-    setTodos(newTodos);
-  };
-
   const completed = todos.filter((todo) => todo.completed);
   const pending = todos.filter((todo) => !todo.completed);
+
+  let filteredTodos = todos;
+
+  if (activeTab === "Completed") {
+    filteredTodos = todos.filter((todo) => todo.completed);
+  } else if (activeTab === "Pending") {
+    filteredTodos = todos.filter((todo) => !todo.completed);
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 p-6">
       <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-lg">
 
-        <h1 className="text-3xl text-blue-600 font-bold text-center mb-6">
+        <h1 className="text-3xl font-bold text-blue-600 mb-6">
           Todo List
         </h1>
 
-        <div className="flex gap-3 mb-8">
+        <div className="flex gap-3 mb-6">
           <input
             type="text"
             placeholder="Enter your task"
             value={task}
             onChange={(e) => setTask(e.target.value)}
-            className="flex-1 min-w-0 border border-blue-300 bg-blue-50 p-3 rounded-lg"
+            className="flex-1 min-w-0 border border-gray-300 p-3 rounded-lg"
           />
 
           <button
@@ -90,64 +94,87 @@ function Todo() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="border border-gray-300 rounded-xl overflow-hidden">
 
-          <div className="border p-4 rounded-lg">
-            <div className="flex gap-2 items-center mb-4">
-              <input
-                type="checkbox"
-                checked={todos.length > 0 && todos.every((todo) => todo.completed)}
-                onChange={(e) => handleAll(e.target.checked)}
-                disabled={todos.length === 0}
-              />
-              <h2 className="text-xl font-bold">All ({todos.length})</h2>
-            </div>
+          <div className="flex border-b border-gray-300">
 
-            {todos.map((todo, index) => (
-              <div key={index} className="flex items-center gap-2 bg-slate-100 p-3 rounded mb-3">
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => handleCheck(index)}
-                />
+            <button
+              onClick={() => setActiveTab("All")}
+              className={`flex-1 p-4 font-semibold ${
+                activeTab === "All"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-600"
+              }`}
+            >
+              All ({todos.length})
+            </button>
 
-                <span className="flex-1 break-all">{todo.text}</span>
-
-                <button
-                  onClick={() => handleEdit(index)}
-                  className="bg-orange-500 text-white px-3 py-2 rounded"
-                >
-                  Edit
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="border p-4 rounded-lg">
-            <h2 className="text-xl font-bold text-green-600 mb-4">
+            <button
+              onClick={() => setActiveTab("Completed")}
+              className={`flex-1 p-4 font-semibold ${
+                activeTab === "Completed"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-600"
+              }`}
+            >
               Completed ({completed.length})
-            </h2>
+            </button>
 
-            {completed.map((todo, index) => (
-              <p key={index} className="bg-green-50 p-3 rounded mb-3 break-all">
-                {todo.text}
-              </p>
-            ))}
-          </div>
-
-          <div className="border p-4 rounded-lg">
-            <h2 className="text-xl font-bold text-orange-600 mb-4">
+            <button
+              onClick={() => setActiveTab("Pending")}
+              className={`flex-1 p-4 font-semibold ${
+                activeTab === "Pending"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-600"
+              }`}
+            >
               Pending ({pending.length})
-            </h2>
+            </button>
 
-            {pending.map((todo, index) => (
-              <p key={index} className="bg-orange-50 p-3 rounded mb-3 break-all">
-                {todo.text}
-              </p>
-            ))}
           </div>
 
+          <div className="p-5 min-h-64">
+
+            {filteredTodos.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">
+                No tasks available
+              </p>
+            ) : (
+              filteredTodos.map((todo) => {
+                const index = todos.indexOf(todo);
+
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 bg-slate-100 p-3 rounded-lg mb-3"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={todo.completed}
+                      onChange={() => handleCheck(index)}
+                      className="w-4 h-4"
+                    />
+
+                    <span className="flex-1 break-all">
+                      {todo.text}
+                    </span>
+
+                    {activeTab === "All" && (
+                      <button
+                        onClick={() => handleEdit(index)}
+                        className="bg-orange-500 text-white px-3 py-2 rounded-lg"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+
+          </div>
         </div>
+
       </div>
     </div>
   );
