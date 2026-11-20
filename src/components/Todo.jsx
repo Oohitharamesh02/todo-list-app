@@ -19,61 +19,44 @@ function Todo() {
   }, []);
 
   const getDeadline = (date, time) => {
-    const dateParts = date.split("/");
-    const timeParts = time.match(
-      /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i
-    );
-
-    if (
-      dateParts.length !== 3 ||
-      !timeParts
-    ) {
+    if (!date || !time) {
       return null;
     }
 
-    const day = Number(dateParts[0]);
-    const month = Number(dateParts[1]);
-    const year = Number(dateParts[2]);
+    const deadline = new Date(date + "T" + time);
 
-    let hours = Number(timeParts[1]);
-    const minutes = Number(timeParts[2]);
-    const period = timeParts[3].toUpperCase();
-
-    if (day < 1 || day > 31 || month < 1 || month > 12) {
-      return null;
-    }
-
-    if (period === "PM" && hours !== 12) {
-      hours = hours + 12;
-    }
-
-    if (period === "AM" && hours === 12) {
-      hours = 0;
-    }
-
-    const deadline = new Date(year, month - 1, day, hours, minutes);
-
-    if (
-      deadline.getDate() !== day ||
-      deadline.getMonth() !== month - 1 ||
-      deadline.getFullYear() !== year
-    ) {
+    if (isNaN(deadline.getTime())) {
       return null;
     }
 
     return deadline;
   };
 
+  const formatDate = (date) => {
+    if (!date) return "";
+
+    const parts = date.split("-");
+    return parts[2] + "/" + parts[1] + "/" + parts[0];
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "";
+
+    const parts = time.split(":");
+    let hours = Number(parts[0]);
+    const minutes = parts[1];
+
+    const period = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+    hours = hours === 0 ? 12 : hours;
+
+    return String(hours).padStart(2, "0") + ":" + minutes + " " + period;
+  };
+
   const handleAdd = () => {
-    if (task.trim() === "" || date.trim() === "" || time.trim() === "") {
+    if (task.trim() === "" || date === "" || time === "") {
       alert("Please enter task, date and time");
-      return;
-    }
-
-    const deadline = getDeadline(date, time);
-
-    if (!deadline) {
-      alert("Use DD/MM/YYYY and HH:MM AM/PM format");
       return;
     }
 
@@ -135,8 +118,20 @@ function Todo() {
     setTodos(newTodos);
   };
 
+  const handleSelectAll = (checked) => {
+    const newTodos = todos.map((todo) => ({
+      ...todo,
+      completed: checked
+    }));
+
+    setTodos(newTodos);
+  };
+
   const completed = todos.filter((todo) => todo.completed);
   const pending = todos.filter((todo) => !todo.completed);
+
+  const allCompleted =
+    todos.length > 0 && todos.every((todo) => todo.completed);
 
   let filteredTodos = todos;
 
@@ -148,50 +143,40 @@ function Todo() {
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 sm:p-6">
-      <div className="max-w-5xl mx-auto bg-white p-5 sm:p-6 rounded-xl shadow-lg">
+      <div className="max-w-6xl mx-auto bg-white p-5 sm:p-7 rounded-2xl shadow-lg">
 
-        <h1 className="text-3xl font-bold text-blue-600 mb-6">
+        <h1 className="text-3xl font-bold text-blue-700 mb-7">
           Todo App
         </h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 mb-7">
 
-          <div className="flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="Enter your task"
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
+          />
 
-            <input
-              type="text"
-              placeholder="Enter your task"
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              className="w-full border border-gray-300 p-3 rounded-lg"
-            />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
+          />
 
-            <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
+          />
 
-              <input
-                type="text"
-                placeholder="DD/MM/YYYY"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg"
-              />
-
-              <input
-                type="text"
-                placeholder="HH:MM AM/PM"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full border border-gray-300 p-3 rounded-lg"
-              />
-
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-center gap-2">
-
+          <div className="flex gap-2">
             <button
               onClick={handleAdd}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+              className="bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-700"
             >
               {editIndex !== null ? "Update" : "Add Task"}
             </button>
@@ -199,34 +184,45 @@ function Todo() {
             {editIndex !== null && (
               <button
                 onClick={handleCancel}
-                className="bg-gray-500 text-white px-5 py-2 rounded-lg"
+                className="bg-gray-500 text-white px-4 py-3 rounded-xl"
               >
                 Cancel
               </button>
             )}
-
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex justify-center items-center gap-3 mb-7 flex-wrap">
 
-          <button
-            onClick={() => setActiveTab("All")}
-            className={`flex-1 p-3 rounded-lg font-semibold ${
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-600 ${
               activeTab === "All"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-gray-700"
+                ? "bg-red-600 text-white"
+                : "bg-white text-red-600"
             }`}
           >
-            All ({todos.length})
-          </button>
+            <input
+              type="checkbox"
+              checked={allCompleted}
+              onChange={(e) => handleSelectAll(e.target.checked)}
+              disabled={todos.length === 0}
+              className="w-4 h-4 cursor-pointer accent-white"
+            />
+
+            <button
+              onClick={() => setActiveTab("All")}
+              className="font-semibold"
+            >
+              All ({todos.length})
+            </button>
+          </div>
 
           <button
             onClick={() => setActiveTab("Completed")}
-            className={`flex-1 p-3 rounded-lg font-semibold ${
+            className={`px-5 py-2 rounded-full border-2 border-red-600 font-semibold ${
               activeTab === "Completed"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-gray-700"
+                ? "bg-red-600 text-white"
+                : "bg-white text-red-600 hover:bg-red-50"
             }`}
           >
             Completed ({completed.length})
@@ -234,10 +230,10 @@ function Todo() {
 
           <button
             onClick={() => setActiveTab("Pending")}
-            className={`flex-1 p-3 rounded-lg font-semibold ${
+            className={`px-5 py-2 rounded-full border-2 border-red-600 font-semibold ${
               activeTab === "Pending"
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 text-gray-700"
+                ? "bg-red-600 text-white"
+                : "bg-white text-red-600 hover:bg-red-50"
             }`}
           >
             Pending ({pending.length})
@@ -264,9 +260,11 @@ function Todo() {
               return (
                 <div
                   key={index}
-                  className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-lg border ${
-                    activeTab === "All" && isOverdue
-                      ? "bg-red-100 border-red-500"
+                  className={`flex items-center gap-3 p-4 rounded-xl border ${
+                    todo.completed
+                      ? "bg-green-50 border-green-300"
+                      : activeTab === "All" && isOverdue
+                      ? "bg-red-50 border-red-400"
                       : "bg-white border-gray-200"
                   }`}
                 >
@@ -275,7 +273,7 @@ function Todo() {
                     type="checkbox"
                     checked={todo.completed}
                     onChange={() => handleCheck(index)}
-                    className="w-5 h-5"
+                    className="w-5 h-5 cursor-pointer accent-blue-600"
                   />
 
                   <div className="flex-1 min-w-0">
@@ -283,7 +281,7 @@ function Todo() {
                     <p
                       className={`font-semibold break-words ${
                         todo.completed
-                          ? "text-green-600"
+                          ? "text-green-700"
                           : activeTab === "All" && isOverdue
                           ? "text-red-600"
                           : "text-gray-900"
@@ -292,28 +290,28 @@ function Todo() {
                       {todo.text}
                     </p>
 
+                    <div className="flex gap-3 mt-2 text-sm text-gray-600 flex-wrap">
+                      <span>{formatDate(todo.date)}</span>
+                      <span>{formatTime(todo.time)}</span>
+                    </div>
+
                     {todo.completed && (
-                      <p className="text-green-600 text-sm">
+                      <p className="text-green-600 text-sm font-medium mt-1">
                         Completed
                       </p>
                     )}
 
                     {activeTab === "All" && isOverdue && (
-                      <p className="text-red-600 text-sm font-semibold">
+                      <p className="text-red-600 text-sm font-medium mt-1">
                         Overdue
                       </p>
                     )}
 
                   </div>
 
-                  <div className="flex gap-3 text-sm text-gray-600">
-                    <span>{todo.date}</span>
-                    <span>{todo.time}</span>
-                  </div>
-
                   <button
                     onClick={() => handleEdit(index)}
-                    className="bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg"
+                    className="bg-blue-100 text-blue-700 px-5 py-2 rounded-lg hover:bg-blue-200"
                   >
                     Edit
                   </button>
