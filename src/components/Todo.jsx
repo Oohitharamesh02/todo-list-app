@@ -1,50 +1,128 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function Todo() {
   const [task, setTask] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [todos, setTodos] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
   const [activeTab, setActiveTab] = useState("All");
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const getDeadline = (date, time) => {
+    if (!date || !time) {
+      return null;
+    }
+
+    const deadline = new Date(date + "T" + time);
+
+    if (isNaN(deadline.getTime())) {
+      return null;
+    }
+
+    return deadline;
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "";
+
+    const parts = date.split("-");
+    return parts[2] + "/" + parts[1] + "/" + parts[0];
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "";
+
+    const parts = time.split(":");
+    let hours = Number(parts[0]);
+    const minutes = parts[1];
+
+    const period = hours >= 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+    hours = hours === 0 ? 12 : hours;
+
+    return String(hours).padStart(2, "0") + ":" + minutes + " " + period;
+  };
 
   const handleAdd = () => {
-    if (task.trim() === "") {
+    if (task.trim() === "" || date === "" || time === "") {
+      alert("Please enter task, date and time");
       return;
     }
 
     if (editIndex !== null) {
       const newTodos = [...todos];
+
       newTodos[editIndex] = {
         ...newTodos[editIndex],
-        text: task,
+        text: task.trim(),
+        date: date,
+        time: time
       };
+
       setTodos(newTodos);
       setEditIndex(null);
     } else {
-      setTodos([...todos, { text: task, completed: false }]);
+      const newTask = {
+        text: task.trim(),
+        date: date,
+        time: time,
+        completed: false
+      };
+
+      setTodos([...todos, newTask]);
     }
 
     setTask("");
+    setDate("");
+    setTime("");
   };
 
   const handleEdit = (index) => {
     setTask(todos[index].text);
+    setDate(todos[index].date);
+    setTime(todos[index].time);
     setEditIndex(index);
     setActiveTab("All");
   };
 
   const handleCancel = () => {
     setTask("");
+    setDate("");
+    setTime("");
     setEditIndex(null);
   };
 
   const handleCheck = (index) => {
     const newTodos = todos.map((todo, i) => {
       if (i === index) {
-        return { ...todo, completed: !todo.completed };
+        return {
+          ...todo,
+          completed: !todo.completed
+        };
       }
+
       return todo;
     });
+
+    setTodos(newTodos);
+  };
+
+  const handleSelectAll = (checked) => {
+    const newTodos = todos.map((todo) => ({
+      ...todo,
+      completed: checked
+    }));
 
     setTodos(newTodos);
   };
@@ -52,129 +130,198 @@ function Todo() {
   const completed = todos.filter((todo) => todo.completed);
   const pending = todos.filter((todo) => !todo.completed);
 
+  const allCompleted =
+    todos.length > 0 && todos.every((todo) => todo.completed);
+
   let filteredTodos = todos;
 
   if (activeTab === "Completed") {
-    filteredTodos = todos.filter((todo) => todo.completed);
+    filteredTodos = completed;
   } else if (activeTab === "Pending") {
-    filteredTodos = todos.filter((todo) => !todo.completed);
+    filteredTodos = pending;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
-      <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-lg">
+    <div className="min-h-screen bg-slate-100 p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto bg-white p-5 sm:p-7 rounded-2xl shadow-lg">
 
-        <h1 className="text-3xl font-bold text-blue-600 mb-6">
-          Todo List
+        <h1 className="text-3xl font-bold text-blue-700 mb-7">
+          Todo App
         </h1>
 
-        <div className="flex gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 mb-7">
+
           <input
             type="text"
             placeholder="Enter your task"
             value={task}
             onChange={(e) => setTask(e.target.value)}
-            className="flex-1 min-w-0 border border-gray-300 p-3 rounded-lg"
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
           />
 
-          <button
-            onClick={handleAdd}
-            className="bg-green-600 text-white px-5 py-3 rounded-lg"
-          >
-            {editIndex !== null ? "Update" : "Add"}
-          </button>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
+          />
 
-          {editIndex !== null && (
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
+          />
+
+          <div className="flex gap-2">
             <button
-              onClick={handleCancel}
-              className="bg-gray-500 text-white px-4 py-3 rounded-lg"
+              onClick={handleAdd}
+              className="bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-700"
             >
-              Cancel
+              {editIndex !== null ? "Update" : "Add Task"}
             </button>
-          )}
+
+            {editIndex !== null && (
+              <button
+                onClick={handleCancel}
+                className="bg-gray-500 text-white px-4 py-3 rounded-xl"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="border border-gray-300 rounded-xl overflow-hidden">
+        <div className="flex justify-center items-center gap-3 mb-7 flex-wrap">
 
-          <div className="flex border-b border-gray-300">
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-600 ${
+              activeTab === "All"
+                ? "bg-red-600 text-white"
+                : "bg-white text-red-600"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={allCompleted}
+              onChange={(e) => handleSelectAll(e.target.checked)}
+              disabled={todos.length === 0}
+              className="w-4 h-4 cursor-pointer accent-white"
+            />
 
             <button
               onClick={() => setActiveTab("All")}
-              className={`flex-1 p-4 font-semibold ${
-                activeTab === "All"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-600"
-              }`}
+              className="font-semibold"
             >
               All ({todos.length})
             </button>
-
-            <button
-              onClick={() => setActiveTab("Completed")}
-              className={`flex-1 p-4 font-semibold ${
-                activeTab === "Completed"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-600"
-              }`}
-            >
-              Completed ({completed.length})
-            </button>
-
-            <button
-              onClick={() => setActiveTab("Pending")}
-              className={`flex-1 p-4 font-semibold ${
-                activeTab === "Pending"
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-600"
-              }`}
-            >
-              Pending ({pending.length})
-            </button>
-
           </div>
 
-          <div className="p-5 min-h-64">
+          <button
+            onClick={() => setActiveTab("Completed")}
+            className={`px-5 py-2 rounded-full border-2 border-red-600 font-semibold ${
+              activeTab === "Completed"
+                ? "bg-red-600 text-white"
+                : "bg-white text-red-600 hover:bg-red-50"
+            }`}
+          >
+            Completed ({completed.length})
+          </button>
 
-            {filteredTodos.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
-                No tasks available
-              </p>
-            ) : (
-              filteredTodos.map((todo) => {
-                const index = todos.indexOf(todo);
+          <button
+            onClick={() => setActiveTab("Pending")}
+            className={`px-5 py-2 rounded-full border-2 border-red-600 font-semibold ${
+              activeTab === "Pending"
+                ? "bg-red-600 text-white"
+                : "bg-white text-red-600 hover:bg-red-50"
+            }`}
+          >
+            Pending ({pending.length})
+          </button>
 
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 bg-slate-100 p-3 rounded-lg mb-3"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={todo.completed}
-                      onChange={() => handleCheck(index)}
-                      className="w-4 h-4"
-                    />
-
-                    <span className="flex-1 break-all">
-                      {todo.text}
-                    </span>
-
-                    {activeTab === "All" && (
-                      <button
-                        onClick={() => handleEdit(index)}
-                        className="bg-orange-500 text-white px-3 py-2 rounded-lg"
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </div>
-                );
-              })
-            )}
-
-          </div>
         </div>
 
+        <div className="space-y-3">
+
+          {filteredTodos.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">
+              No tasks available
+            </p>
+          ) : (
+            filteredTodos.map((todo) => {
+              const index = todos.indexOf(todo);
+              const deadline = getDeadline(todo.date, todo.time);
+
+              const isOverdue =
+                !todo.completed &&
+                deadline !== null &&
+                deadline < currentTime;
+
+              return (
+                <div
+                  key={index}
+                  className={`flex items-center gap-3 p-4 rounded-xl border ${
+                    todo.completed
+                      ? "bg-green-50 border-green-300"
+                      : activeTab === "All" && isOverdue
+                      ? "bg-red-50 border-red-400"
+                      : "bg-white border-gray-200"
+                  }`}
+                >
+
+                  <input
+                    type="checkbox"
+                    checked={todo.completed}
+                    onChange={() => handleCheck(index)}
+                    className="w-5 h-5 cursor-pointer accent-blue-600"
+                  />
+
+                  <div className="flex-1 min-w-0">
+
+                    <p
+                      className={`font-semibold break-words ${
+                        todo.completed
+                          ? "text-green-700"
+                          : activeTab === "All" && isOverdue
+                          ? "text-red-600"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      {todo.text}
+                    </p>
+
+                    <div className="flex gap-3 mt-2 text-sm text-gray-600 flex-wrap">
+                      <span>{formatDate(todo.date)}</span>
+                      <span>{formatTime(todo.time)}</span>
+                    </div>
+
+                    {todo.completed && (
+                      <p className="text-green-600 text-sm font-medium mt-1">
+                        Completed
+                      </p>
+                    )}
+
+                    {activeTab === "All" && isOverdue && (
+                      <p className="text-red-600 text-sm font-medium mt-1">
+                        Overdue
+                      </p>
+                    )}
+
+                  </div>
+
+                  <button
+                    onClick={() => handleEdit(index)}
+                    className="bg-blue-100 text-blue-700 px-5 py-2 rounded-lg hover:bg-blue-200"
+                  >
+                    Edit
+                  </button>
+
+                </div>
+              );
+            })
+          )}
+
+        </div>
       </div>
     </div>
   );
