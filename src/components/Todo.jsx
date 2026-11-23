@@ -8,6 +8,7 @@ function Todo() {
   const [todos, setTodos] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
   const [activeTab, setActiveTab] = useState("All");
+  const [search, setSearch] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -17,20 +18,6 @@ function Todo() {
 
     return () => clearInterval(timer);
   }, []);
-
-  const getDeadline = (date, time) => {
-    if (!date || !time) {
-      return null;
-    }
-
-    const deadline = new Date(date + "T" + time);
-
-    if (isNaN(deadline.getTime())) {
-      return null;
-    }
-
-    return deadline;
-  };
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -45,13 +32,12 @@ function Todo() {
     const parts = time.split(":");
     let hours = Number(parts[0]);
     const minutes = parts[1];
-
     const period = hours >= 12 ? "PM" : "AM";
 
     hours = hours % 12;
-    hours = hours === 0 ? 12 : hours;
+    if (hours === 0) hours = 12;
 
-    return String(hours).padStart(2, "0") + ":" + minutes + " " + period;
+    return hours + ":" + minutes + " " + period;
   };
 
   const handleAdd = () => {
@@ -106,12 +92,8 @@ function Todo() {
   const handleCheck = (index) => {
     const newTodos = todos.map((todo, i) => {
       if (i === index) {
-        return {
-          ...todo,
-          completed: !todo.completed
-        };
+        return { ...todo, completed: !todo.completed };
       }
-
       return todo;
     });
 
@@ -141,6 +123,10 @@ function Todo() {
     filteredTodos = pending;
   }
 
+  filteredTodos = filteredTodos.filter((todo) =>
+    todo.text.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto bg-white p-5 sm:p-7 rounded-2xl shadow-lg">
@@ -149,11 +135,10 @@ function Todo() {
           Todo App
         </h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 mb-7">
-
+        <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 mb-7">
           <input
             type="text"
-            placeholder="Enter your task"
+            placeholder="Enter the task"
             value={task}
             onChange={(e) => setTask(e.target.value)}
             className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
@@ -192,69 +177,79 @@ function Todo() {
           </div>
         </div>
 
-        <div className="flex justify-center items-center gap-3 mb-7 flex-wrap">
+        <div className="border border-gray-300 rounded-2xl p-3 mb-6">
+          <div className="flex justify-start items-center gap-3 flex-wrap">
 
-          <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-600 ${
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border border-blue-600 ${
               activeTab === "All"
-                ? "bg-red-600 text-white"
-                : "bg-white text-red-600"
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={allCompleted}
-              onChange={(e) => handleSelectAll(e.target.checked)}
-              disabled={todos.length === 0}
-              className="w-4 h-4 cursor-pointer accent-white"
-            />
+                ? "bg-blue-600 text-white"
+                : "bg-white text-blue-600"
+            }`}>
+              <input
+                type="checkbox"
+                checked={allCompleted}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                disabled={todos.length === 0}
+                className="w-4 h-4 cursor-pointer"
+              />
+
+              <button
+                onClick={() => setActiveTab("All")}
+                className="text-sm font-medium"
+              >
+                All ({todos.length})
+              </button>
+            </div>
 
             <button
-              onClick={() => setActiveTab("All")}
-              className="font-semibold"
+              onClick={() => setActiveTab("Completed")}
+              className={`px-4 py-2 text-sm rounded-full border border-blue-600 ${
+                activeTab === "Completed"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-blue-600"
+              }`}
             >
-              All ({todos.length})
+              Completed ({completed.length})
             </button>
+
+            <button
+              onClick={() => setActiveTab("Pending")}
+              className={`px-4 py-2 text-sm rounded-full border border-blue-600 ${
+                activeTab === "Pending"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-blue-600"
+              }`}
+            >
+              Pending ({pending.length})
+            </button>
+
           </div>
+        </div>
 
-          <button
-            onClick={() => setActiveTab("Completed")}
-            className={`px-5 py-2 rounded-full border-2 border-red-600 font-semibold ${
-              activeTab === "Completed"
-                ? "bg-red-600 text-white"
-                : "bg-white text-red-600 hover:bg-red-50"
-            }`}
-          >
-            Completed ({completed.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab("Pending")}
-            className={`px-5 py-2 rounded-full border-2 border-red-600 font-semibold ${
-              activeTab === "Pending"
-                ? "bg-red-600 text-white"
-                : "bg-white text-red-600 hover:bg-red-50"
-            }`}
-          >
-            Pending ({pending.length})
-          </button>
-
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="Search tasks..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:border-blue-500"
+          />
         </div>
 
         <div className="space-y-3">
-
           {filteredTodos.length === 0 ? (
             <p className="text-center text-gray-500 py-8">
-              No tasks available
+              {search ? "No matching tasks found" : "No tasks available"}
             </p>
           ) : (
             filteredTodos.map((todo) => {
               const index = todos.indexOf(todo);
-              const deadline = getDeadline(todo.date, todo.time);
+              const deadline = new Date(todo.date + "T" + todo.time);
 
               const isOverdue =
                 !todo.completed &&
-                deadline !== null &&
+                todo.date &&
+                todo.time &&
                 deadline < currentTime;
 
               return (
@@ -268,42 +263,32 @@ function Todo() {
                       : "bg-white border-gray-200"
                   }`}
                 >
-
                   <input
                     type="checkbox"
                     checked={todo.completed}
                     onChange={() => handleCheck(index)}
-                    className="w-5 h-5 cursor-pointer accent-blue-600"
+                    className="w-5 h-5 cursor-pointer"
                   />
 
                   <div className="flex-1 min-w-0">
-
-                    <p
-                      className={`font-semibold break-words ${
-                        todo.completed
-                          ? "text-green-700"
-                          : activeTab === "All" && isOverdue
-                          ? "text-red-600"
-                          : "text-gray-900"
-                      }`}
-                    >
+                    <p className={`font-semibold break-words ${
+                      todo.completed
+                        ? "text-green-700"
+                        : activeTab === "All" && isOverdue
+                        ? "text-red-600"
+                        : "text-gray-900"
+                    }`}>
                       {todo.text}
                     </p>
 
-                    <div className="flex gap-3 mt-2 text-sm text-gray-600 flex-wrap">
+                    <div className="flex gap-3 mt-2 text-sm text-gray-600">
                       <span>{formatDate(todo.date)}</span>
                       <span>{formatTime(todo.time)}</span>
                     </div>
 
                     {todo.completed && (
-                      <p className="text-green-600 text-sm font-medium mt-1">
+                      <p className="text-green-600 text-sm mt-1">
                         Completed
-                      </p>
-                    )}
-
-                    {activeTab === "All" && isOverdue && (
-                      <p className="text-red-600 text-sm font-medium mt-1">
-                        Overdue
                       </p>
                     )}
 
@@ -311,17 +296,16 @@ function Todo() {
 
                   <button
                     onClick={() => handleEdit(index)}
-                    className="bg-blue-100 text-blue-700 px-5 py-2 rounded-lg hover:bg-blue-200"
+                    className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200"
                   >
                     Edit
                   </button>
-
                 </div>
               );
             })
           )}
-
         </div>
+
       </div>
     </div>
   );
